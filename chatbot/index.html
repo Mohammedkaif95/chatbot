@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Voice Assistant</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            width: 100%;
+            height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #e6e6e6;
+        }
+
+        .chat-app {
+            width: 90%;
+            max-width: 1200px;
+            height: 90vh;
+            background: rgba(25, 25, 35, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            padding: 20px 30px;
+            background: rgba(35, 35, 50, 0.9);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header img {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #4cc9f0;
+        }
+
+        .header-text h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #f8f9fa;
+        }
+
+        .header-text p {
+            font-size: 0.9rem;
+            color: #a0a0a0;
+        }
+
+        .voice-controls {
+            margin-left: auto;
+            display: flex;
+            gap: 10px;
+        }
+
+        .voice-btn {
+            background: rgba(60, 60, 80, 0.7);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .voice-btn:hover {
+            background: rgba(76, 201, 240, 0.7);
+            transform: scale(1.1);
+        }
+
+        .voice-btn.active {
+            background: linear-gradient(135deg, #4cc9f0 0%, #4361ee 100%);
+            box-shadow: 0 0 15px rgba(76, 201, 240, 0.7);
+        }
+
+        .chat_container {
+            flex: 1;
+            padding: 25px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="rgba(30,30,40,0.5)"/><path d="M0 0L100 100M100 0L0 100" stroke="rgba(60,60,80,0.2)" stroke-width="1"/></svg>');
+        }
+
+        .user-chat-box, .ai-chat-box {
+            display: flex;
+            max-width: 80%;
+            gap: 15px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .user-chat-box {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .ai-chat-box {
+            align-self: flex-start;
+        }
+
+        .chat-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .user-chat-box .chat-avatar {
+            background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+        }
+
+        .ai-chat-box .chat-avatar {
+            background: linear-gradient(135deg, #f72585 0%, #7209b7 100%);
+        }
+
+        .user-chat-area, .ai-chat-area {
+            padding: 18px 22px;
+            border-radius: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            line-height: 1.5;
+            font-size: 1rem;
+            position: relative;
+        }
+
+        .user-chat-area {
+            background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .ai-chat-area {
+            background: rgba(45, 45, 60, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom-left-radius: 5px;
+            color: #e6e6e6;
+        }
+
+        .user-image, .ai-image {
+            max-width: 200px;
+            border-radius: 12px;
+            margin-top: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .prompt-area {
+            padding: 20px 30px;
+            background: rgba(35, 35, 50, 0.9);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .prompt-area input {
+            flex: 1;
+            height: 55px;
+            border: none;
+            padding: 0 25px;
+            font-size: 1rem;
+            outline: none;
+            background: rgba(60, 60, 80, 0.7);
+            border-radius: 30px;
+            color: white;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s;
+        }
+
+        .prompt-area input:focus {
+            background: rgba(70, 70, 90, 0.9);
+            box-shadow: 0 0 0 2px rgba(76, 201, 240, 0.5), inset 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .prompt-area input::placeholder {
+            color: #a0a0a0;
+        }
+
+        .prompt-area button {
+            width: 55px;
+            height: 55px;
+            border: none;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4cc9f0 0%, #4361ee 100%);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.3rem;
+            box-shadow: 0 5px 15px rgba(76, 201, 240, 0.4);
+            transition: all 0.3s;
+        }
+
+        .prompt-area button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(76, 201, 240, 0.6);
+        }
+
+        .prompt-area button:active {
+            transform: translateY(0);
+        }
+
+        .load {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+
+        /* Scrollbar styling */
+        .chat_container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat_container::-webkit-scrollbar-track {
+            background: rgba(40, 40, 55, 0.5);
+            border-radius: 10px;
+        }
+
+        .chat_container::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #4cc9f0 0%, #4361ee 100%);
+            border-radius: 10px;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 5px;
+            padding: 10px 15px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #a0a0a0;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        /* Image upload styling */
+        .image-upload-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .upload-preview {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .upload-description {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 10px;
+            background: rgba(60, 60, 80, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 0.9rem;
+            resize: none;
+            outline: none;
+        }
+
+        .upload-description:focus {
+            background: rgba(70, 70, 90, 0.9);
+            border-color: rgba(76, 201, 240, 0.5);
+        }
+
+        .upload-actions {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .upload-btn {
+            flex: 1;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-send {
+            background: linear-gradient(135deg, #4cc9f0 0%, #4361ee 100%);
+            color: white;
+        }
+
+        .upload-cancel {
+            background: rgba(80, 80, 100, 0.7);
+            color: #e6e6e6;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Voice recording indicator */
+        .voice-recording {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 15px;
+            background: rgba(220, 53, 69, 0.2);
+            border-radius: 20px;
+            border: 1px solid rgba(220, 53, 69, 0.5);
+            animation: pulse 1.5s infinite;
+        }
+
+        .recording-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #dc3545;
+        }
+
+        .voice-text-preview {
+            padding: 10px 15px;
+            background: rgba(76, 201, 240, 0.2);
+            border-radius: 10px;
+            margin-top: 5px;
+            border: 1px solid rgba(76, 201, 240, 0.5);
+            font-style: italic;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .chat-app {
+                width: 95%;
+                height: 95vh;
+            }
+            
+            .user-chat-box, .ai-chat-box {
+                max-width: 90%;
+            }
+            
+            .header {
+                padding: 15px 20px;
+            }
+            
+            .chat_container {
+                padding: 15px;
+            }
+            
+            .prompt-area {
+                padding: 15px 20px;
+            }
+            
+            .voice-controls {
+                gap: 5px;
+            }
+            
+            .voice-btn {
+                width: 35px;
+                height: 35px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-app">
+        <div class="header">
+            <div class="chat-avatar">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="header-text">
+                <h1>AI Voice Assistant</h1>
+                <p>Online • Ready to help with text and voice</p>
+            </div>
+            <div class="voice-controls">
+                <button class="voice-btn" id="ttsToggle" title="Text-to-Speech">
+                    <i class="fas fa-volume-up"></i>
+                </button>
+                <button class="voice-btn" id="speechToggle" title="Speech-to-Text">
+                    <i class="fas fa-microphone"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="chat_container">
+            <div class="ai-chat-box">
+                <div class="chat-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="ai-chat-area">
+                    Hello! I'm your AI assistant. You can chat with me using text or voice. 
+                    Try clicking the microphone button to speak to me, or use the speaker button to hear my responses!
+                </div>
+            </div>
+        </div>
+        
+        <div class="prompt-area">
+            <button id="image">
+                <i class="fas fa-image"></i>
+                <input type="file" accept="image/*" hidden>
+            </button>
+            <input type="text" id="prompt" placeholder="Type your message or use voice...">
+            <button id="submit">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let promptInput = document.querySelector("#prompt");
+        let chatContainer = document.querySelector(".chat_container");
+        let imagebtn = document.querySelector("#image");
+        let imageinput = document.querySelector("#image input");
+        let submitBtn = document.querySelector("#submit");
+        let ttsToggle = document.querySelector("#ttsToggle");
+        let speechToggle = document.querySelector("#speechToggle");
+
+    const Api_Url = "http://127.0.0.1:5000/chat";
+
+
+
+        let user = {
+            data: null,
+        };
+
+        // Voice features state
+        let ttsEnabled = true;
+        let speechRecognitionActive = false;
+        let recognition = null;
+        let speechSynthesis = window.speechSynthesis;
+
+        // Initialize speech recognition if available
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = function() {
+                speechToggle.classList.add('active');
+                speechToggle.innerHTML = '<i class="fas fa-microphone-slash"></i>';
+                
+                // Add recording indicator to chat
+                let recordingHtml = `
+                    <div class="chat-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-chat-area">
+                        <div class="voice-recording">
+                            <div class="recording-dot"></div>
+                            <span>Listening... Speak now</span>
+                        </div>
+                        <div class="voice-text-preview" id="voicePreview"></div>
+                    </div>
+                `;
+                
+                let recordingBox = createChatBox(recordingHtml, "user-chatbox");
+                chatContainer.appendChild(recordingBox);
+                chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
+            };
+
+            recognition.onresult = function(event) {
+                const transcript = Array.from(event.results)
+                    .map(result => result[0])
+                    .map(result => result.transcript)
+                    .join('');
+                
+                // Update the preview with interim results
+                const voicePreview = document.getElementById('voicePreview');
+                if (voicePreview) {
+                    voicePreview.textContent = transcript;
+                }
+                
+                // If final result, use it as the message
+                if (event.results[0].isFinal) {
+                    promptInput.value = transcript;
+                    handleChatResponse(transcript);
+                }
+            };
+
+            recognition.onerror = function(event) {
+                console.error('Speech recognition error', event.error);
+                speechToggle.classList.remove('active');
+                speechToggle.innerHTML = '<i class="fas fa-microphone"></i>';
+                
+                // Remove recording indicator
+                const recordingBox = document.querySelector('.voice-recording')?.closest('.user-chatbox');
+                if (recordingBox) {
+                    recordingBox.remove();
+                }
+                
+                if (event.error === 'not-allowed') {
+                    alert('Microphone access denied. Please allow microphone access to use voice features.');
+                }
+            };
+
+            recognition.onend = function() {
+                speechToggle.classList.remove('active');
+                speechToggle.innerHTML = '<i class="fas fa-microphone"></i>';
+                speechRecognitionActive = false;
+                
+                // Remove recording indicator if no final result was captured
+                setTimeout(() => {
+                    const recordingBox = document.querySelector('.voice-recording')?.closest('.user-chatbox');
+                    const voicePreview = document.getElementById('voicePreview');
+                    if (recordingBox && voicePreview && !voicePreview.textContent.trim()) {
+                        recordingBox.remove();
+                    }
+                }, 1000);
+            };
+        } else {
+            // Speech recognition not supported
+            speechToggle.style.display = 'none';
+        }
+
+        // Text-to-Speech function
+        function speakText(text) {
+            if (!ttsEnabled) return;
+            
+            // Stop any ongoing speech
+            speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 1.0;
+            utterance.pitch = 1.0;
+            utterance.volume = 0.8;
+            
+            // Highlight the AI response while speaking
+            const aiChatAreas = document.querySelectorAll('.ai-chat-area');
+            const lastAiResponse = aiChatAreas[aiChatAreas.length - 1];
+            
+            if (lastAiResponse) {
+                lastAiResponse.style.background = 'rgba(76, 201, 240, 0.3)';
+                lastAiResponse.style.border = '1px solid rgba(76, 201, 240, 0.5)';
+                
+                utterance.onend = function() {
+                    lastAiResponse.style.background = '';
+                    lastAiResponse.style.border = '';
+                };
+            }
+            
+            speechSynthesis.speak(utterance);
+        }
+
+        // Toggle text-to-speech
+        ttsToggle.addEventListener('click', function() {
+            ttsEnabled = !ttsEnabled;
+            if (ttsEnabled) {
+                this.classList.add('active');
+                this.innerHTML = '<i class="fas fa-volume-up"></i>';
+            } else {
+                this.classList.remove('active');
+                this.innerHTML = '<i class="fas fa-volume-mute"></i>';
+                // Stop any ongoing speech when disabled
+                speechSynthesis.cancel();
+            }
+        });
+
+        // Toggle speech recognition
+        speechToggle.addEventListener('click', function() {
+            if (!recognition) {
+                alert('Speech recognition is not supported in your browser.');
+                return;
+            }
+            
+            if (speechRecognitionActive) {
+                recognition.stop();
+                speechRecognitionActive = false;
+            } else {
+                try {
+                    recognition.start();
+                    speechRecognitionActive = true;
+                } catch (error) {
+                    console.error('Speech recognition start error:', error);
+                }
+            }
+        });
+
+    // Function to generate AI response
+    async function generateResponse(aiChatBox, message = null) {
+        let text = aiChatBox.querySelector(".ai-chat-area");
+
+        try {
+            let response = await fetch("http://127.0.0.1:5000/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    message: message || user.data
+                })
+            });
+
+            let data = await response.json();
+            let apiResponse = data.reply || "No response from backend";
+
+            // typing effect
+            text.innerHTML = "";
+            let i = 0;
+
+            function typeWriter() {
+                if (i < apiResponse.length) {
+                    text.innerHTML += apiResponse.charAt(i);
+                    i++;
+                    setTimeout(typeWriter, 20);
+                }
+            }
+            typeWriter();
+
+        } catch (error) {
+            console.error(error);
+            text.innerHTML = "⚠️ Error connecting to backend.";
+        } finally {
+            chatContainer.scrollTo({
+                top: chatContainer.scrollHeight,
+                behavior: "smooth",
+            });
+        }
+    }
+        
+
+        // Create chat box dynamically
+        function createChatBox(html, classes) {
+            let div = document.createElement("div");
+            div.innerHTML = html;
+            div.classList.add(classes);
+            return div;
+        }
+
+        // Handle sending user message & AI response
+        function handleChatResponse(message) {
+            user.data = message;
+
+            let userHtml = `
+                <div class="chat-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="user-chat-area">${user.data}</div>
+            `;
+
+            promptInput.value = "";
+
+            let userChatBox = createChatBox(userHtml, "user-chatbox");
+            chatContainer.appendChild(userChatBox);
+
+            chatContainer.scrollTo({
+                top: chatContainer.scrollHeight,
+                behavior: "smooth",
+            });
+
+            setTimeout(() => {
+                let aiHtml = `
+                    <div class="chat-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="ai-chat-area">
+                        <div class="typing-indicator">
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                        </div>
+                    </div>
+                `;
+
+                let aiChatBox = createChatBox(aiHtml, "ai-chat-box");
+                chatContainer.appendChild(aiChatBox);
+
+                generateResponse(aiChatBox);
+            }, 600);
+        }
+
+        // Trigger message send on Enter key
+        promptInput.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" && promptInput.value.trim() !== "") {
+                handleChatResponse(promptInput.value.trim());
+            }
+        });
+
+        // Submit button click event
+        submitBtn.addEventListener("click", () => {
+            if (promptInput.value.trim() !== "") {
+                handleChatResponse(promptInput.value.trim());
+            }
+        });
+
+        // Handle image selection
+        imageinput.addEventListener("change", () => {
+            const file = imageinput.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                // Create the image upload interface
+                const uploadHtml = `
+                    <div class="chat-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-chat-area">
+                        <div class="image-upload-container">
+                            <img src="${e.target.result}" alt="Uploaded image" class="upload-preview">
+                            <textarea class="upload-description" placeholder="Describe the image for the AI assistant..."></textarea>
+                            <div class="upload-actions">
+                                <button class="upload-btn upload-cancel">Cancel</button>
+                                <button class="upload-btn upload-send">Send</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                let userChatBox = createChatBox(uploadHtml, "user-chatbox");
+                chatContainer.appendChild(userChatBox);
+
+                // Add event listeners for the buttons
+                const cancelBtn = userChatBox.querySelector('.upload-cancel');
+                const sendBtn = userChatBox.querySelector('.upload-send');
+                const descriptionTextarea = userChatBox.querySelector('.upload-description');
+                
+                cancelBtn.addEventListener('click', () => {
+                    userChatBox.remove();
+                    imageinput.value = '';
+                });
+                
+                sendBtn.addEventListener('click', () => {
+                    const description = descriptionTextarea.value.trim();
+                    if (description) {
+                        // Replace the upload interface with the final message
+                        const finalHtml = `
+                            <div class="chat-avatar">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="user-chat-area">
+                                <img src="${e.target.result}" alt="Uploaded image" class="user-image">
+                                <p>${description}</p>
+                            </div>
+                        `;
+                        
+                        userChatBox.innerHTML = finalHtml;
+                        
+                        // Send the description to the AI
+                        user.data = `I've uploaded an image. Here's my description: ${description}`;
+                        
+                        setTimeout(() => {
+                            let aiHtml = `
+                                <div class="chat-avatar">
+                                    <i class="fas fa-robot"></i>
+                                </div>
+                                <div class="ai-chat-area">
+                                    <div class="typing-indicator">
+                                        <div class="typing-dot"></div>
+                                        <div class="typing-dot"></div>
+                                        <div class="typing-dot"></div>
+                                    </div>
+                                </div>
+                            `;
+                            let aiChatBox = createChatBox(aiHtml, "ai-chat-box");
+                            chatContainer.appendChild(aiChatBox);
+                            generateResponse(aiChatBox);
+                        }, 600);
+                    } else {
+                        descriptionTextarea.focus();
+                        descriptionTextarea.placeholder = "Please provide a description before sending...";
+                    }
+                });
+
+                chatContainer.scrollTo({
+                    top: chatContainer.scrollHeight,
+                    behavior: "smooth",
+                });
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // Trigger file input click
+        imagebtn.addEventListener("click", () => {
+            imagebtn.querySelector("input").click();
+        });
+    </script>
+</body>
+</html>  mere pass ye code use hi edit karo 
